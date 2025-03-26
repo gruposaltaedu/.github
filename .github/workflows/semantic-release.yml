@@ -13,6 +13,8 @@ jobs:
       contents: write # Permite push na branch
       pull-requests: write # Permite criar PRs
       issues: write # Permite criar issues
+    environment:
+      name: Semver
 
     steps:
       - name: Checkout code
