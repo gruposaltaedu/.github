@@ -1,4 +1,4 @@
-name: Semantic Release
+name: 🚀 Semantic Release Automation
 
 on:
   workflow_call:
@@ -7,7 +7,8 @@ on:
         required: true
 
 jobs:
-  release:
+  semantic-release:
+    name: 🏷️ Release Version ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,26 +18,27 @@ jobs:
       name: Semver
 
     steps:
-      - name: Checkout code
+      - name: 🛠️ Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup Node.js
+      - name: ⎔ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20.15"
 
-      - name: Install pnpm
+      - name: 📦 Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 9.6
 
-      - name: Install dependencies
+      - name: 📌 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Semantic Release
+      - name: 🚀 Run Semantic Release
+        id: semantic-release
         uses: cycjimmy/semantic-release-action@v4
         with:
           extra_plugins: |
@@ -44,3 +46,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           HUSKY: "0"
+
+      - name: ℹ️ Show release info
+        if: always()
+        run: |
+          echo "Next version: ${{ steps.semantic-release.outputs.next-release-version }}"
+          echo "Published: ${{ steps.semantic-release.outputs.release-published }}"
