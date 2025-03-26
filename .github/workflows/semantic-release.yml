@@ -1,7 +1,7 @@
 name: Semantic Release
 
 on:
-  workflow_call: # Permite que outros repositórios chamem este workflow
+  workflow_call:
     secrets:
       GH_TOKEN:
         required: true
@@ -10,9 +10,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Permite push na branch
-      pull-requests: write # Permite criar PRs
-      issues: write # Permite criar issues
+      contents: write
+      pull-requests: write
+      issues: write
     environment:
       name: Semver
 
@@ -43,3 +43,4 @@ jobs:
             - "@semantic-release/exec"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          HUSKY: "0"
