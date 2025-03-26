@@ -8,7 +8,7 @@ on:
 
 jobs:
   semantic-release:
-    name: 🏷️ Release Version ${{ matrix.node-version }}
+    name: 🏷️ Release Version
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: ⎔ Setup Node.js
+      - name: ⬢ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20.15"
@@ -38,7 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🚀 Run Semantic Release
-        id: semantic-release
+        id: release
         uses: cycjimmy/semantic-release-action@v4
         with:
           extra_plugins: |
@@ -50,5 +50,5 @@ jobs:
       - name: ℹ️ Show release info
         if: always()
         run: |
-          echo "Next version: ${{ steps.semantic-release.outputs.next-release-version }}"
-          echo "Published: ${{ steps.semantic-release.outputs.release-published }}"
+          echo "Released version: ${{ steps.release.outputs.new-release-version || 'Nenhuma nova versão liberada' }}"
+          echo "Published: ${{ steps.release.outputs.release-published == 'true' && 'Sim' || 'Não' }}"
