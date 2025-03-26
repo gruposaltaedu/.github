@@ -1,0 +1,43 @@
+name: Semantic Release
+
+on:
+  workflow_call: # Permite que outros repositórios chamem este workflow
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permite push na branch
+      pull-requests: write # Permite criar PRs
+      issues: write # Permite criar issues
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.15"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.6
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            - "@semantic-release/exec"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
