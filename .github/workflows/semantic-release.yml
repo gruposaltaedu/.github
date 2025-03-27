@@ -27,12 +27,12 @@ jobs:
       - name: ⬢ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.15"
+          node-version: "20.15" # Use a versão do Node.js que seu projeto requer
 
       - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
-          version: 9.6
+          version: 9.6 # Use a versão do pnpm que seu projeto requer
 
       - name: 📌 Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,5 +50,14 @@ jobs:
       - name: ℹ️ Show release info
         if: always()
         run: |
-          echo "Released version: ${{ steps.release.outputs.new-release-version || 'Nenhuma nova versão liberada' }}"
-          echo "Published: ${{ steps.release.outputs.release-published == 'true' && 'Sim' || 'Não' }}"
+          RELEASE_VERSION="${{ steps.release.outputs.new-release-version || 'Nenhuma nova versão' }}"
+          RELEASE_PUBLISHED="${{ steps.release.outputs.release-published }}"
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "Nenhuma tag encontrada")
+
+          echo ""
+          echo "==========================================="
+          echo "🚀 Semantic Release - Informações da Versão"
+          echo "==========================================="
+          echo "🔖 Última tag registrada: $LAST_TAG"
+          echo "📢 Nova versão liberada: $RELEASE_VERSION"
+          echo "==========================================="
