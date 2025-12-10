@@ -20,6 +20,12 @@ jobs:
   semantic-release:
     name: 🏷️ Release Version
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
     permissions:
       contents: write
       pull-requests: write
