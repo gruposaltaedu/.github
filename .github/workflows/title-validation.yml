@@ -51,94 +51,63 @@ jobs:
 
           echo "✅ PR title is valid."
 
-      - name: 🔎 Find existing bot comment
+      # Comment only on failure; on success, remove a previous failure/success bot comment if present.
+      - name: 🚨 Upsert failure comment or clear previous
         if: always()
         uses: actions/github-script@v8
-        id: find_comment
         with:
           script: |
+            const markerFail = '## ❌ Falha na Validação do Título da PR';
+            const markerOkLegacy = '## ✅ Título da PR Validado com Sucesso';
+
             const comments = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
 
-            const botComment = comments.data.find(comment => 
-              comment.body.includes('## ❌ Falha na Validação do Título da PR') ||
-              comment.body.includes('## ✅ Título da PR Validado com Sucesso')
+            const botComment = comments.data.find(comment =>
+              comment.body.includes(markerFail) ||
+              comment.body.includes(markerOkLegacy)
             );
 
-            return botComment ? botComment.id : null;
+            const failed = '${{ job.status }}' === 'failure';
 
-      - name: 💚 Post success comment
-        if: success()
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const commentBody = `## ✅ Título da PR Validado com Sucesso
-
-            Perfeito! O título desta PR segue o padrão esperado. ✨
-
-            ### 📋 Formato Validado:
-            - **Título atual:** \`${{ github.event.pull_request.title }}\`
-            - **Padrões aceitos:** \`LIV-{número} - descrição\` ou \`LIVNEW-{número} - descrição\`
-            - **Exemplos:** \`LIV-123 - Corrigir bug no checkout\` | \`LIVNEW-456 - Nova funcionalidade\`
-
-            ### 🎯 Status da Validação:
-            - ✅ Formato correto
-            - ✅ Número do ticket presente (LIV- ou LIVNEW-)
-            - ✅ Descrição significativa
-
-            ---
-            *🤖 Última verificação: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}*`;
-
-            const commentId = ${{ steps.find_comment.outputs.result }};
-
-            if (commentId) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: commentId,
-                body: commentBody
-              });
-            } else {
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: commentBody
-              });
+            if (!failed) {
+              if (botComment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                });
+              }
+              return;
             }
 
-      - name: 🚨 Post error comment
-        if: failure()
-        uses: actions/github-script@v8
-        with:
-          script: |
             const commentBody = `## ❌ Falha na Validação do Título da PR
 
             O título desta PR não segue o padrão esperado. Por favor, ajuste-o para continuar.
 
-            ### 📋 Formato Necessário:
+            ### 📋 Formato necessário
             **Padrões aceitos:** \`LIV-{número} - descrição\` ou \`LIVNEW-{número} - descrição\`
 
-            ### ✅ Exemplos Válidos:
+            ### ✅ Exemplos válidos
             - \`LIV-123 - Corrigir bug no checkout\`
             - \`LIV-456 - Adicionar nova funcionalidade de login\`
             - \`LIVNEW-789 - Nova feature de autenticação\`
             - \`LIVNEW-100 - Refatorar componente de usuário\`
 
-            ### ❌ Exemplos Inválidos:
+            ### ❌ Exemplos inválidos
             - \`Corrigir bug\` (falta prefixo LIV- ou LIVNEW- e número)
             - \`LIV-123\` (falta descrição)
             - \`LIV-abc - Descrição\` (número deve ser dígitos)
 
-            ### 🔧 Como Corrigir:
+            ### 🔧 Como corrigir
             1. Edite o título da PR
             2. Use o formato: \`LIV-{número} - descrição\` ou \`LIVNEW-{número} - descrição clara\`
             3. O workflow será executado automaticamente
 
-            ### 📚 Regras Detalhadas:
+            ### 📚 Regras
             - Deve começar com \`LIV-\` ou \`LIVNEW-\`
             - Seguido de um ou mais dígitos (ex: 123, 4567)
             - Espaço, hífen, espaço
@@ -147,20 +116,18 @@ jobs:
             ---
             *🤖 Última verificação: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}*`;
 
-            const commentId = ${{ steps.find_comment.outputs.result }};
-
-            if (commentId) {
+            if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: commentId,
-                body: commentBody
+                comment_id: botComment.id,
+                body: commentBody,
               });
             } else {
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: commentBody
+                body: commentBody,
               });
             }
