@@ -57,24 +57,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ inputs.pnpm-version }}
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 🧰 Setup pnpm and Node
+        uses: gruposaltaedu/.github/.github/actions/setup-pnpm-node@main
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-
-      - name: 🔧 Configure .npmrc for GitHub Packages
-        run: |
-          echo "@gruposaltaedu:registry=https://npm.pkg.github.com/" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
-
-      - name: ⚡ Install dependencies
-        run: pnpm install --frozen-lockfile
+          pnpm-version: ${{ inputs.pnpm-version }}
+          token: ${{ secrets.GH_TOKEN }}
 
       # Keep release invocation identical: same action, plugins, and GH_TOKEN wiring.
       - name: 🚀 Run Semantic Release

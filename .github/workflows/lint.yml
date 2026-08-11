@@ -47,24 +47,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ inputs.pnpm-version }}
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 🧰 Setup pnpm and Node
+        uses: gruposaltaedu/.github/.github/actions/setup-pnpm-node@main
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "pnpm"
-
-      - name: 🔧 Configure .npmrc for GitHub Packages
-        run: |
-          echo "@gruposaltaedu:registry=https://npm.pkg.github.com/" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
-
-      - name: ⚡ Install dependencies
-        run: pnpm install --frozen-lockfile
+          pnpm-version: ${{ inputs.pnpm-version }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: 🧹 Run lint
         env:
@@ -96,7 +84,6 @@ jobs:
               || true
           )
 
-          # Keep only files that still exist in the workspace
           EXISTING=()
           for f in "${FILES[@]}"; do
             if [ -n "$f" ] && [ -f "$f" ]; then

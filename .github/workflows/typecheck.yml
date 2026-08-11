@@ -1,0 +1,100 @@
+name: ✅ Typecheck
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version
+        type: string
+        required: false
+        default: "22.14"
+      pnpm-version:
+        description: pnpm version
+        type: string
+        required: false
+        default: "10.6.5"
+      typecheck-command:
+        description: Command used when package.json has no typecheck script override is needed
+        type: string
+        required: false
+        default: "pnpm typecheck"
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  typecheck:
+    name: 🔍 Run typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CI: true
+      HUSKY: "0"
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔎 Decide if typecheck should run
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if ! node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.typecheck ? 0 : 1)"; then
+            echo "No package.json typecheck script; skipping (safe no-op)."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" != "pull_request" ] || [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
+            echo "Non-PR or missing SHAs; running typecheck."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mapfile -t FILES < <(
+            git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${HEAD_SHA}" \
+              | grep -E '\.(ts|tsx)$' \
+              | grep -vE '(^|/)(dist|coverage|node_modules)/' \
+              || true
+          )
+
+          EXISTING=0
+          for f in "${FILES[@]}"; do
+            if [ -n "$f" ] && [ -f "$f" ]; then
+              EXISTING=1
+              break
+            fi
+          done
+
+          if [ "$EXISTING" -eq 0 ]; then
+            echo "No TypeScript files changed in this PR; skipping typecheck."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "TypeScript files changed; running typecheck."
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+      - name: 🧰 Setup pnpm and Node
+        if: steps.decide.outputs.run == 'true'
+        uses: gruposaltaedu/.github/.github/actions/setup-pnpm-node@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: ✅ Run typecheck
+        if: steps.decide.outputs.run == 'true'
+        run: ${{ inputs.typecheck-command }}

@@ -1,0 +1,41 @@
+name: Setup pnpm and Node
+description: >
+  Install pnpm and Node.js, configure GitHub Packages auth for @gruposaltaedu,
+  and run pnpm install --frozen-lockfile. Does not checkout the repository.
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "22.14"
+  pnpm-version:
+    description: pnpm version
+    required: false
+    default: "10.6.5"
+  token:
+    description: GitHub token with read:packages for @gruposaltaedu
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: "pnpm"
+
+    - name: Configure .npmrc for GitHub Packages
+      shell: bash
+      run: |
+        echo "@gruposaltaedu:registry=https://npm.pkg.github.com/" > .npmrc
+        echo "//npm.pkg.github.com/:_authToken=${{ inputs.token }}" >> .npmrc
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
