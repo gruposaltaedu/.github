@@ -1,4 +1,4 @@
-name: 🧹 Lint
+name: 🚨 Lint
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ on:
 
 jobs:
   lint:
-    name: 🔍 Run lint
+    name: Run lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
