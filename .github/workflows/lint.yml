@@ -24,7 +24,7 @@ on:
 
 jobs:
   lint:
-    name: 🧹 Lint
+    name: 🔍 Run lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
