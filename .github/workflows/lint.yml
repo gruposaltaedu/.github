@@ -88,9 +88,10 @@ jobs:
             exit 0
           fi
 
+          # Match pre-commit/lint-staged: eslint on changed source files (not ng lint).
           mapfile -t FILES < <(
             git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${HEAD_SHA}" \
-              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|html)$' \
+              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' \
               | grep -vE '(^|/)(dist|coverage|node_modules)/' \
               || true
           )
@@ -108,20 +109,7 @@ jobs:
             exit 0
           fi
 
-          echo "Linting ${#EXISTING[@]} changed file(s):"
+          echo "Linting ${#EXISTING[@]} changed file(s) with eslint:"
           printf ' - %s\n' "${EXISTING[@]}"
 
-          HAS_NG_LINT=false
-          if [ -f angular.json ] && grep -q '"builder": "@angular-eslint/builder:lint"' angular.json; then
-            HAS_NG_LINT=true
-          fi
-
-          if [ "$HAS_NG_LINT" = true ]; then
-            ARGS=()
-            for f in "${EXISTING[@]}"; do
-              ARGS+=(--lint-file-patterns="$f")
-            done
-            pnpm exec ng lint "${ARGS[@]}"
-          else
-            pnpm exec eslint --no-error-on-unmatched-pattern "${EXISTING[@]}"
-          fi
+          pnpm exec eslint --no-error-on-unmatched-pattern "${EXISTING[@]}"
