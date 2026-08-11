@@ -30,9 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # GH_TOKEN comes from the caller repo's Semver environment (not workflow_call secrets).
-    # Explicitly passing secrets.GH_TOKEN from the caller without environment resolves empty
-    # and shadows the environment secret → 401 on GitHub Packages.
+    # Caller must use secrets: inherit so Semver environment secrets resolve here.
     environment:
       name: Semver
 

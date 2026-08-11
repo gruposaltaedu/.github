@@ -32,10 +32,21 @@ runs:
 
     - name: Configure .npmrc for GitHub Packages
       shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
       run: |
+        set -euo pipefail
+        if [ -z "${NODE_AUTH_TOKEN}" ]; then
+          echo "::error::GitHub Packages token is empty. For reusable workflows, the caller must use secrets: inherit and the job must set environment: Semver (where GH_TOKEN lives)."
+          exit 1
+        fi
+        echo "GitHub Packages token length: ${#NODE_AUTH_TOKEN}"
         echo "@gruposaltaedu:registry=https://npm.pkg.github.com/" > .npmrc
-        echo "//npm.pkg.github.com/:_authToken=${{ inputs.token }}" >> .npmrc
+        echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+        echo "always-auth=true" >> .npmrc
 
     - name: Install dependencies
       shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
       run: pnpm install --frozen-lockfile
