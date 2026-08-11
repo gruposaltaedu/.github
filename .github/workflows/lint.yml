@@ -41,6 +41,10 @@ jobs:
     permissions:
       contents: read
 
+    # Same as semantic-release: GH_TOKEN lives in the Semver environment on app repos.
+    environment:
+      name: Semver
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
