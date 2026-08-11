@@ -23,10 +23,6 @@ on:
         type: boolean
         required: false
         default: true
-    secrets:
-      # Optional: callers should use secrets: inherit (Semver env). Kept for older callers that still map GH_TOKEN.
-      GH_TOKEN:
-        required: false
 
 jobs:
   lint:
@@ -34,17 +30,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # Caller must use secrets: inherit so Semver environment secrets resolve here.
-    environment:
-      name: Semver
-
     env:
       CI: true
       HUSKY: "0"
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     permissions:
       contents: read
+      packages: read
 
     steps:
       - name: 📥 Checkout repository
@@ -57,7 +49,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           pnpm-version: ${{ inputs.pnpm-version }}
-          token: ${{ secrets.GH_TOKEN }}
+          # Caller GITHUB_TOKEN — package must grant this repo Read in Manage Actions access.
+          token: ${{ github.token }}
 
       - name: 🧹 Run lint
         env:

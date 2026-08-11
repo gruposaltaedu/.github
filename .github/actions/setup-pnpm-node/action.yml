@@ -13,7 +13,9 @@ inputs:
     required: false
     default: "10.6.5"
   token:
-    description: GitHub token with read:packages for @gruposaltaedu
+    description: >
+      Token for npm.pkg.github.com (prefer github.token / GITHUB_TOKEN with
+      packages:read and Manage Actions access on each package).
     required: true
 
 runs:
@@ -37,7 +39,7 @@ runs:
       run: |
         set -euo pipefail
         if [ -z "${NODE_AUTH_TOKEN}" ]; then
-          echo "::error::GitHub Packages token is empty. For reusable workflows, the caller must use secrets: inherit and the job must set environment: Semver (where GH_TOKEN lives)."
+          echo "::error::GitHub Packages token is empty. Pass github.token (with packages:read) or a PAT with package read access."
           exit 1
         fi
         echo "GitHub Packages token length: ${#NODE_AUTH_TOKEN}"
