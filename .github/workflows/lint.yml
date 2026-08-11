@@ -14,10 +14,15 @@ on:
         required: false
         default: "10.6.5"
       lint-command:
-        description: Command to run lint
+        description: Fallback command when only-changed is false or event is not a pull_request
         type: string
         required: false
         default: "pnpm lint"
+      only-changed:
+        description: Lint only files changed in the pull request
+        type: boolean
+        required: false
+        default: true
     secrets:
       GH_TOKEN:
         required: true
@@ -39,6 +44,8 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
@@ -60,4 +67,61 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🧹 Run lint
-        run: ${{ inputs.lint-command }}
+        env:
+          ONLY_CHANGED: ${{ inputs.only-changed }}
+          LINT_COMMAND: ${{ inputs.lint-command }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$ONLY_CHANGED" != "true" ] || [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "Running full lint command: $LINT_COMMAND"
+            eval "$LINT_COMMAND"
+            exit 0
+          fi
+
+          if [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
+            echo "Missing PR SHAs; falling back to full lint."
+            eval "$LINT_COMMAND"
+            exit 0
+          fi
+
+          mapfile -t FILES < <(
+            git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${HEAD_SHA}" \
+              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|html)$' \
+              | grep -vE '(^|/)(dist|coverage|node_modules)/' \
+              || true
+          )
+
+          # Keep only files that still exist in the workspace
+          EXISTING=()
+          for f in "${FILES[@]}"; do
+            if [ -n "$f" ] && [ -f "$f" ]; then
+              EXISTING+=("$f")
+            fi
+          done
+
+          if [ ${#EXISTING[@]} -eq 0 ]; then
+            echo "No lintable files changed in this PR."
+            exit 0
+          fi
+
+          echo "Linting ${#EXISTING[@]} changed file(s):"
+          printf ' - %s\n' "${EXISTING[@]}"
+
+          HAS_NG_LINT=false
+          if [ -f angular.json ] && grep -q '"builder": "@angular-eslint/builder:lint"' angular.json; then
+            HAS_NG_LINT=true
+          fi
+
+          if [ "$HAS_NG_LINT" = true ]; then
+            ARGS=()
+            for f in "${EXISTING[@]}"; do
+              ARGS+=(--lint-file-patterns="$f")
+            done
+            pnpm exec ng lint "${ARGS[@]}"
+          else
+            pnpm exec eslint --no-error-on-unmatched-pattern "${EXISTING[@]}"
+          fi
