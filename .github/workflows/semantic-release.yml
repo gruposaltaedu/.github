@@ -42,6 +42,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      packages: read
     environment:
       name: Semver
 
@@ -57,12 +58,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Install with GITHUB_TOKEN (package Manage Actions access). Semver GH_TOKEN is for release only.
       - name: 🧰 Setup pnpm and Node
         uses: gruposaltaedu/.github/.github/actions/setup-pnpm-node@main
         with:
           node-version: ${{ inputs.node-version }}
           pnpm-version: ${{ inputs.pnpm-version }}
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
 
       # Keep release invocation identical: same action, plugins, and GH_TOKEN wiring.
       - name: 🚀 Run Semantic Release
