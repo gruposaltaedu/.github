@@ -23,15 +23,18 @@ on:
         type: boolean
         required: false
         default: true
-    secrets:
-      GH_TOKEN:
-        required: true
 
 jobs:
   lint:
     name: 🔍 Run eslint
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    # GH_TOKEN comes from the caller repo's Semver environment (not workflow_call secrets).
+    # Explicitly passing secrets.GH_TOKEN from the caller without environment resolves empty
+    # and shadows the environment secret → 401 on GitHub Packages.
+    environment:
+      name: Semver
 
     env:
       CI: true
@@ -40,10 +43,6 @@ jobs:
 
     permissions:
       contents: read
-
-    # Same as semantic-release: GH_TOKEN lives in the Semver environment on app repos.
-    environment:
-      name: Semver
 
     steps:
       - name: 📥 Checkout repository
