@@ -1,0 +1,63 @@
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version
+        type: string
+        required: false
+        default: "22.14"
+      pnpm-version:
+        description: pnpm version
+        type: string
+        required: false
+        default: "10.6.5"
+      lint-command:
+        description: Command to run lint
+        type: string
+        required: false
+        default: "pnpm lint"
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CI: true
+      HUSKY: "0"
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ inputs.pnpm-version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+
+      - name: Configure .npmrc for GitHub Packages
+        run: |
+          echo "@gruposaltaedu:registry=https://npm.pkg.github.com/" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run lint
+        run: ${{ inputs.lint-command }}
