@@ -1,11 +1,11 @@
-name: ✏️ PR Title Validator
+name: ✏️ Title
 
 on:
   workflow_call:
 
 jobs:
   title-check:
-    name: 🔍 Check PR Title Format
+    name: 🔍 Check format
     runs-on: ubuntu-latest
     steps:
       - name: 📝 Extract and validate title
