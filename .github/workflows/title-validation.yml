@@ -69,6 +69,8 @@ jobs:
       - name: 🚨 Upsert failure comment or clear previous
         if: always()
         uses: actions/github-script@v8
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         with:
           script: |
             const markerFail = '## ❌ Falha na Validação do Título da PR';
@@ -98,8 +100,7 @@ jobs:
               return;
             }
 
-            const headBranch = '${{ github.event.pull_request.head.ref }}';
-            const isReleaseBranch = headBranch.startsWith('release/');
+            const isReleaseBranch = (process.env.HEAD_BRANCH || '').startsWith('release/');
 
             const commentBody = isReleaseBranch
               ? `## ❌ Falha na Validação do Título da PR
