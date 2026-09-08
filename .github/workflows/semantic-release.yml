@@ -67,12 +67,14 @@ jobs:
           token: ${{ github.token }}
 
       # Keep release invocation identical: same action, plugins, and GH_TOKEN wiring.
+      # `extra_plugins` is a newline-separated list of package names — a YAML dash
+      # would become part of the string and reach `npm install` as a package spec.
       - name: 🚀 Run Semantic Release
         id: release
         uses: cycjimmy/semantic-release-action@v4
         with:
           extra_plugins: |
-            - "@semantic-release/exec"
+            @semantic-release/exec
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           HUSKY: "0"
