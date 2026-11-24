@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: true
+      include-html:
+        description: Also lint changed .html files (Angular templates), which liv-configs-model covers. Set to false in a repo whose ESLint config has no HTML rules.
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   lint:
@@ -55,6 +60,7 @@ jobs:
       - name: 🧹 Run lint
         env:
           ONLY_CHANGED: ${{ inputs.only-changed }}
+          INCLUDE_HTML: ${{ inputs.include-html }}
           LINT_COMMAND: ${{ inputs.lint-command }}
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -74,10 +80,15 @@ jobs:
             exit 0
           fi
 
+          EXTENSIONS='ts|tsx|js|jsx|mjs|cjs'
+          if [ "$INCLUDE_HTML" = "true" ]; then
+            EXTENSIONS="$EXTENSIONS|html"
+          fi
+
           # Match pre-commit/lint-staged: eslint on changed source files (not ng lint).
           mapfile -t FILES < <(
             git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${HEAD_SHA}" \
-              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' \
+              | grep -E "\.(${EXTENSIONS})$" \
               | grep -vE '(^|/)(dist|coverage|node_modules)/' \
               || true
           )
